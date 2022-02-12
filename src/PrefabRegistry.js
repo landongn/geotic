@@ -105,7 +105,7 @@ export class PrefabRegistry {
         const entity = world.createEntity();
 
         entity._qeligible = false;
-        if (properties.serializable) {
+        if (typeof properties.serializable !== 'undefined') {
             entity.serializable = properties.serializable;
         }
 
