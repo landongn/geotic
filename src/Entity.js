@@ -74,7 +74,7 @@ const removeComponentArray = (entity, component) => {
 };
 
 const serializeComponent = (component) => {
-    return component.serialize();
+    if (component.properties && component.properties.serializable) return component.serialize();
 };
 
 const serializeComponentArray = (arr) => {
