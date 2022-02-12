@@ -3,10 +3,15 @@ import { deepClone } from './util/deep-clone';
 export class Component {
     static allowMultiple = false;
     static keyProperty = null;
+    static serializable = true;
     static properties = {};
 
     get world() {
         return this.entity.world;
+    }
+
+    get serializable() {
+        return this.constructor.serializable;
     }
 
     get allowMultiple() {
