@@ -74,7 +74,7 @@ const removeComponentArray = (entity, component) => {
 };
 
 const serializeComponent = (component) => {
-    if (component.properties && component.properties.serializable) return component.serialize();
+    return component.serialize();
 };
 
 const serializeComponentArray = (arr) => {
@@ -94,6 +94,7 @@ const serializeComponentKeyed = (ob) => {
 export class Entity {
     _cbits = 0n;
     _qeligible = true;
+    serializable = true;
 
     constructor(world, id) {
         this.world = world;
@@ -171,6 +172,7 @@ export class Entity {
     }
 
     serialize() {
+        if (!this.serializable) {return}
         const components = {};
 
         for (const k in this.components) {
