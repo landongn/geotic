@@ -10,7 +10,8 @@
         "pretty": "prettier --write .",
         "benchmark": "node --experimental-modules --es-module-specifier-resolution=node ./benchmark.js",
         "test": "jest --config jest.config.json",
-        "prepublish": "npm run build"
+        "prepublish": "npm run build",
+        "prepare": "npm run build"
     },
     "author": "Dalton Mills <mills.dalton@gmail.com> (http://www.ddmills.com)",
     "license": "MIT",
