@@ -69,7 +69,7 @@ export class World {
         const list = entities || this._entities;
 
         list.forEach((e) => {
-            if (!e.serializable) {continue}
+            if (!e.serializable) {return}
             json.push(e.serialize());
         });
 
