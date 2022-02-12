@@ -112,6 +112,9 @@ export class PrefabRegistry {
         const entity = world.createEntity();
 
         entity._qeligible = false;
+        if (properties.serializable) {
+            entity.serializable = properties.serializable;
+        }
 
         prefab.applyToEntity(entity, properties);
 
