@@ -185,6 +185,7 @@ export class Entity {
             } else {
                 components[k] = serializeComponentKeyed(v);
             }
+            
         }
 
         return {
