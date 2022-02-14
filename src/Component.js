@@ -53,6 +53,14 @@ export class Component {
             ob[key] = this[key];
         }
 
+        // entries will only return enumerable key/value pairs within the instance, and not the prototype chain. 
+        Object.entries(this).forEach(([key, value]) => {
+            if (['world', 'entity'].indexOf(key) === -1) {
+                ob[key] = value;
+            }
+            
+        });
+
         return ob;
     }
 
