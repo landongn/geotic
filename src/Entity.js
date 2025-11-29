@@ -147,16 +147,13 @@ export class Entity {
             const v = this.components[k];
 
             if (v instanceof Component) {
-                this._cbits = subtractBit(this._cbits, v._cbit);
                 v._onDestroyed();
             } else if (v instanceof Array) {
                 for (const component of v) {
-                    this._cbits = subtractBit(this._cbits, component._cbit);
                     component._onDestroyed();
                 }
             } else {
                 for (const component of Object.values(v)) {
-                    this._cbits = subtractBit(this._cbits, component._cbit);
                     component._onDestroyed();
                 }
             }
@@ -165,6 +162,7 @@ export class Entity {
             delete this.components[k];
         }
 
+        this._cbits = 0n;
         this._candidacy();
         this.world._destroyed(this.id);
         this.components = {};
@@ -172,7 +170,7 @@ export class Entity {
     }
 
     serialize() {
-        if (!this.serializable) {return}
+        if (!this.serializable) {return null}
         const components = {};
 
         for (const k in this.components) {

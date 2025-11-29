@@ -9,7 +9,7 @@ export const addBit = (num, bit) => {
 };
 
 export const hasBit = (num, bit) => {
-    return (num >> bit) % 2n !== 0n;
+    return (num & (1n << bit)) !== 0n;
 };
 
 export const bitIntersection = (n1, n2) => {

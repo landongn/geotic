@@ -66,7 +66,7 @@ export class World {
 
     serialize(entities) {
         const json = [];
-        const list = entities || this._entities;
+        const list = entities ? entities : Array.from(this._entities.values());
 
         list.forEach((e) => {
             if (!e.serializable) {return}
