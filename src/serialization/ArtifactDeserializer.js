@@ -4,13 +4,14 @@
  */
 
 import { bigintReviver } from './SerializationHelpers.js';
-import { DEFAULT_DESERIALIZE_OPTIONS } from './constants.js';
+import { DEFAULT_DESERIALIZE_OPTIONS, MARKERS } from './constants.js';
 import { camelString } from '../util/string-util.js';
 
 export class ArtifactDeserializer {
     constructor(world, options = {}) {
         this.world = world;
         this.options = { ...DEFAULT_DESERIALIZE_OPTIONS, ...options };
+        this.entityMap = new Map();
     }
 
     /**
@@ -29,12 +30,15 @@ export class ArtifactDeserializer {
         // Extract entities data
         const entitiesData = processedArtifact.entities || [];
 
-        // Two-pass deserialization:
+        // Three-pass deserialization:
         // Pass 1: Create all entities with IDs
         const entities = this._createEntities(entitiesData);
 
-        // Pass 2: Add components to each entity
+        // Pass 2: Add components to each entity (with ref placeholders)
         this._addComponents(entitiesData, entities);
+
+        // Pass 3: Resolve entity references
+        this._resolveEntityReferences(entities);
 
         // Apply afterDeserialize hook to each entity
         if (this.options.afterDeserialize) {
@@ -54,9 +58,12 @@ export class ArtifactDeserializer {
      * @returns {Array} Array of created Entity objects
      */
     _createEntities(entitiesData) {
-        return entitiesData.map(data => {
-            return this.world.createEntity(data.id);
+        const entities = entitiesData.map(data => {
+            const entity = this.world.createEntity(data.id);
+            this.entityMap.set(data.id, entity);
+            return entity;
         });
+        return entities;
     }
 
     /**
@@ -120,6 +127,115 @@ export class ArtifactDeserializer {
             // Single component instance
             entity.add(ComponentClass, componentData);
         }
+    }
+
+    /**
+     * Pass 3: Resolve entity references in all components
+     *
+     * @private
+     * @param {Array} entities - Array of entities to process
+     */
+    _resolveEntityReferences(entities) {
+        for (const entity of entities) {
+            for (const componentKey in entity.components) {
+                const component = entity.components[componentKey];
+
+                if (Array.isArray(component)) {
+                    // Array of components
+                    component.forEach(comp => {
+                        this._resolveComponentReferences(comp);
+                    });
+                } else if (component && typeof component === 'object' && component.constructor === Object) {
+                    // Check if it's a keyed component collection or single component
+                    if (component._ckey) {
+                        // Single component
+                        this._resolveComponentReferences(component);
+                    } else {
+                        // Keyed components
+                        for (const key in component) {
+                            this._resolveComponentReferences(component[key]);
+                        }
+                    }
+                } else if (component && component._ckey) {
+                    // Single component
+                    this._resolveComponentReferences(component);
+                }
+            }
+        }
+    }
+
+    /**
+     * Resolve entity references in a single component
+     *
+     * @private
+     * @param {Object} component - Component to process
+     */
+    _resolveComponentReferences(component) {
+        for (const key in component) {
+            component[key] = this._resolveValue(component[key]);
+        }
+    }
+
+    /**
+     * Recursively resolve a value, replacing reference markers with Entity objects
+     *
+     * @private
+     * @param {*} value - Value to resolve
+     * @returns {*} Resolved value
+     */
+    _resolveValue(value) {
+        // Check if value is a reference marker
+        if (value && typeof value === 'object' && value[MARKERS.ENTITY_REF]) {
+            const entityId = value[MARKERS.ENTITY_REF];
+            const entity = this.entityMap.get(entityId);
+
+            if (!entity) {
+                // Handle dangling reference according to options
+                return this._handleDanglingReference(entityId);
+            }
+
+            return entity;
+        }
+
+        // Handle arrays
+        if (Array.isArray(value)) {
+            return value.map(item => this._resolveValue(item));
+        }
+
+        // Handle objects
+        if (value && typeof value === 'object' && value.constructor === Object) {
+            const resolved = {};
+            for (const key in value) {
+                resolved[key] = this._resolveValue(value[key]);
+            }
+            return resolved;
+        }
+
+        // Primitives and other types
+        return value;
+    }
+
+    /**
+     * Handle dangling entity reference
+     *
+     * @private
+     * @param {string} entityId - Missing entity ID
+     * @returns {*} Replacement value
+     */
+    _handleDanglingReference(entityId) {
+        const mode = this.options.danglingRefs;
+
+        if (mode === 'throw') {
+            throw new Error(`Dangling entity reference: ${entityId}`);
+        }
+
+        if (mode === 'warn') {
+            console.warn(`Dangling entity reference: ${entityId} - setting to null`);
+            return null;
+        }
+
+        // Default: 'null' - silently return null
+        return null;
     }
 
     /**

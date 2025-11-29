@@ -3,7 +3,8 @@ import { Query } from './Query';
 import { camelString } from './util/string-util';
 import { ArtifactSerializer } from './serialization/ArtifactSerializer.js';
 import { ArtifactDeserializer } from './serialization/ArtifactDeserializer.js';
-import { LEGACY_SCHEMA_VERSION } from './serialization/constants.js';
+import { ArtifactValidator } from './serialization/ArtifactValidator.js';
+import { LEGACY_SCHEMA_VERSION, CURRENT_SCHEMA_VERSION } from './serialization/constants.js';
 
 export class World {
     _id = 0;
@@ -144,10 +145,20 @@ export class World {
      * Supports both legacy format and new artifact format with auto-detection
      *
      * @param {Object} artifact - Artifact object to load
-     * @param {Object} [options={}] - Deserialization options
+     * @param {Object} [options={}] - Load options
+     * @param {boolean} [options.validate=true] - Validate artifact before loading
+     * @param {boolean} [options.autoMigrate=true] - Automatically migrate to current schema
+     * @param {Object} [options.validationOptions] - Options for ArtifactValidator
      * @returns {Array} Array of loaded entities
      */
     loadArtifact(artifact, options = {}) {
+        const {
+            validate = true,
+            autoMigrate = true,
+            validationOptions = {},
+            ...deserializeOptions
+        } = options;
+
         // Auto-detect legacy format (no meta block)
         if (!artifact.meta) {
             // Legacy format: use existing deserialize method
@@ -155,9 +166,24 @@ export class World {
             return Array.from(this._entities.values());
         }
 
-        // New artifact format
-        const deserializer = new ArtifactDeserializer(this, options);
-        return deserializer.deserialize(artifact);
+        // Apply auto-migration if enabled
+        let processedArtifact = artifact;
+        if (autoMigrate) {
+            const sourceVersion = artifact.meta?.schemaVersion ?? 0;
+            if (sourceVersion !== CURRENT_SCHEMA_VERSION) {
+                processedArtifact = this.engine._migrations.migrate(artifact, CURRENT_SCHEMA_VERSION);
+            }
+        }
+
+        // Validate artifact if enabled
+        if (validate) {
+            const validator = new ArtifactValidator(this.engine, validationOptions);
+            validator.validate(processedArtifact);
+        }
+
+        // Deserialize artifact
+        const deserializer = new ArtifactDeserializer(this, deserializeOptions);
+        return deserializer.deserialize(processedArtifact);
     }
 
     /**
