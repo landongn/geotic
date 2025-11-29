@@ -1,6 +1,9 @@
 import { Entity } from './Entity';
 import { Query } from './Query';
 import { camelString } from './util/string-util';
+import { ArtifactSerializer } from './serialization/ArtifactSerializer.js';
+import { ArtifactDeserializer } from './serialization/ArtifactDeserializer.js';
+import { LEGACY_SCHEMA_VERSION } from './serialization/constants.js';
 
 export class World {
     _id = 0;
@@ -122,6 +125,78 @@ export class World {
         entity._candidacy();
 
         return entity;
+    }
+
+    /**
+     * Create an artifact (save state) from the world
+     * Advanced serialization with metadata, validation, and options
+     *
+     * @param {Object} [options={}] - Serialization options
+     * @returns {Object} Artifact object
+     */
+    createArtifact(options = {}) {
+        const serializer = new ArtifactSerializer(this, options);
+        return serializer.serialize();
+    }
+
+    /**
+     * Load an artifact (save state) into the world
+     * Supports both legacy format and new artifact format with auto-detection
+     *
+     * @param {Object} artifact - Artifact object to load
+     * @param {Object} [options={}] - Deserialization options
+     * @returns {Array} Array of loaded entities
+     */
+    loadArtifact(artifact, options = {}) {
+        // Auto-detect legacy format (no meta block)
+        if (!artifact.meta) {
+            // Legacy format: use existing deserialize method
+            this.deserialize(artifact);
+            return Array.from(this._entities.values());
+        }
+
+        // New artifact format
+        const deserializer = new ArtifactDeserializer(this, options);
+        return deserializer.deserialize(artifact);
+    }
+
+    /**
+     * Validate an artifact for integrity and compatibility
+     *
+     * @param {Object} artifact - Artifact to validate
+     * @returns {Object} Validation result {valid: boolean, errors: Array}
+     */
+    validateArtifact(artifact) {
+        // Phase 3: Will be implemented with ArtifactValidator
+        // For now, basic validation
+        const errors = [];
+
+        if (!artifact.entities || !Array.isArray(artifact.entities)) {
+            errors.push('Missing or invalid entities array');
+        }
+
+        if (artifact.meta && artifact.meta.schemaVersion === undefined) {
+            errors.push('Missing schema version in metadata');
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Migrate an artifact to the current schema version
+     *
+     * @param {Object} artifact - Artifact to migrate
+     * @param {number} [targetVersion] - Target schema version (defaults to current)
+     * @returns {Object} Migrated artifact
+     */
+    migrateArtifact(artifact, targetVersion) {
+        // Phase 3: Will be implemented with MigrationRegistry
+        // For now, return artifact unchanged
+        console.warn('Migration not yet implemented - returning artifact unchanged');
+        return artifact;
     }
 
     _candidate(entity) {
