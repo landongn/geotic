@@ -64,10 +64,18 @@ describe('Serialization', () => {
                                 [nestedKeyA]: {
                                     name: nestedKeyA,
                                     hello: 'world',
+                                    obprop: {
+                                        key: 'value',
+                                        arr: [1, 2, 3],
+                                    },
                                 },
                                 [nestedKeyB]: {
                                     name: nestedKeyB,
                                     hello: 'world',
+                                    obprop: {
+                                        key: 'value',
+                                        arr: [1, 2, 3],
+                                    },
                                 },
                             },
                         },
@@ -109,10 +117,18 @@ describe('Serialization', () => {
                                 [nestedKeyA]: {
                                     name: nestedKeyA,
                                     hello: 'world',
+                                    obprop: {
+                                        key: 'value',
+                                        arr: [1, 2, 3],
+                                    },
                                 },
                                 [nestedKeyB]: {
                                     name: nestedKeyB,
                                     hello: 'world',
+                                    obprop: {
+                                        key: 'value',
+                                        arr: [1, 2, 3],
+                                    },
                                 },
                             },
                         },
@@ -144,10 +160,18 @@ describe('Serialization', () => {
                             [nestedNameA]: {
                                 name: nestedNameA,
                                 hello: chance.word(),
+                                obprop: {
+                                    key: 'value',
+                                    arr: [1, 2, 3],
+                                },
                             },
                             [nestedNameB]: {
                                 name: nestedNameB,
                                 hello: chance.word(),
+                                obprop: {
+                                    key: 'value',
+                                    arr: [1, 2, 3],
+                                },
                             },
                         },
                     },
